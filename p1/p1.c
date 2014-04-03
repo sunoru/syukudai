@@ -1,229 +1,246 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdlib.h>
+#include <math.h>
 
-#define MAX 60
+#define MAXN 60
 #define RIGHT 1
 #define WRONG 0
 
-char string1[MAX];
-char string2[MAX];
-int j = 0;
+#define PLUS '+'
+#define MINUS '-'
+#define MULTI '*'
+#define DIV '/'
+#define BOTTOM '$'
+#define TOP '#'
+#define SPACE ' '
+#define VOID 0
+#define SIN -1
+#define POW -2
+#define COS -3
 
+#ifndef DEBUG
+#define DEBUG
+#endif
+
+char str_inf[MAXN];
+char str_suf[MAXN];
+int j = 0;
 /* The node structure of the stack. */
 struct node
 {
     int data;
+    double num;
     struct node *next;
-};
+} *top;
 
 /* The function to create a new stack. */
 struct node *
 create ()
 {
-    struct node *top;
-    top = (struct node *) malloc (sizeof (struct node));
-    top->data = '$';
+    struct node *top = (struct node *) malloc (sizeof (struct node));
+    top->data = BOTTOM;
     top->next = NULL;
 
     return top;
 }
 
+void push(int data, double num)
+{
+    struct node *p = (struct node *) malloc (sizeof (struct node));
+    p->data = data;
+    p->num = num;
+    p->next = top;
+    top = p;
+}
+
+struct node *
+pop()
+{
+    struct node *p = top;
+    top = p->next;
+    return p;
+}
 /* The function to create a reverse Polish notation. */
 struct node *
-change (struct node *s)
+change ()
 {
-    struct node *p, *top;
+    struct node *p;
     int i;
     int m;
     char a;
 
-    top = s;
-    m = strlen (string1);
+    m = strlen (str_inf);
     for (i = 0; i <= m; i++)
+    {
+        a = str_inf[i];
+        if ('0' <= str_inf[i] && str_inf[i] <= '9' || str_inf[i] == '.' ||
+            tolower(str_suf[i]) == 'e')
         {
-            a = string1[i];
-            if ('0' <= string1[i] && string1[i] <= '9')
-	{
-	    string2[j] = string1[i];
-	    j++;
-	}
-            else
-	{
-	    switch (a)
-	    {
-	        case '(': 
-	        {
-		        p = (struct node *) malloc (sizeof (struct node));
-		        p->data = a;
-        		p->next = top;
-		        top = p;
-        		break;
-	        }
-	        case '*':
-	        case '/':		//ŽË²Ù×÷Îª³Ë³ý 
-	            string2[j] = ' ';
-	            j++;		//¿ÕžñÊÇÎªÁËÇø·Öž÷žö²»Í¬µÄÊý         
-	            if ((top->data == '*') || (top->data == '/'))	//Èç¹ûÉÏÒ»žö²Ù×÷Îª³Ë³ý£¬ÔòÉÏÒ»žö²Ù×÷³öÕ»£¬a ÈëÕ» 
-		{
-		    string2[j] = top->data;
-		    j++;
-		    top->data = a;
-		    break;
-		}
-	            else		//·ñÔò aÈëÕ»    
-		{
-		    p = (struct node *) malloc (sizeof (struct node));
-		    p->data = a;
-		    p->next = top;
-		    top = p;
-		    break;
-		}
-	        case '+':
-	        case '-':
-	            {
-		string2[j] = ' ';
-		j++;
-		if (top->data == '+' || top->data == '-' || top->data == '*' || top->data == '/')	//ÈôÉÏÒ»žö²Ù×÷ÎªŒÓŒõ³Ë³ý£¬ÔòÉÏÒ»žö²Ù×÷³öÕ»£¬a ÈëÕ» 
-		    {
-		        string2[j] = top->data;
-		        j++;
-		        top->data = a;
-		        break;
-		    }
-		else
-		    {
-		        p = (struct node *) malloc (sizeof (struct node));	//·ñÔò aÈëÕ»         
-		        p->data = a;
-		        p->next = top;
-		        top = p;
-		        break;
-		    }
-	            }
-	        case ')':		//ÓöµœÓÒÀšºÅ
-	            {
-		string2[j] = ' ';
-		j++;
-		while (top->data != '(')	//ÖŽÐÐ³öÕ»²Ù×÷£¬Ö±µœµ¯³öÕ»µÄÊÇ×óÀšºÅ
-		    {
-		        string2[j] = top->data;
-		        j++;
-		        p = top;
-		        top = top->next;
-		        free (p);
-		    }
-		p = top;
-		top = top->next;
-		free (p);	//×óÀšºÅ²»Êä³ö
-		break;
-	            }
-	        }
-	}
-        }
-    while (top->data != '$')	//×îÖÕœ«Õ»ÖÐµÄÔªËØÒÀŽÎ³öÕ»
-        {
-            string2[j] = top->data;
+	        str_suf[j] = str_inf[i];
             j++;
-            p = top;
-            top = top->next;
-            free (p);
         }
-    printf ("%s\n", string2);
-    string2[j] = '#';		//ÒÔ#Îªstring2œáÊø±êÖŸ 
-
-}
-
-
-
-struct node *
-calculate (struct node *s)
-{
-    struct node *top, *p;
-    char *q;
-    int x, y, a;
-    int i;
-    top = s;
-    for (i = 0; i <= j; i++)
+        else
         {
-            if (string2[i] >= '0' && string2[i] <= '9')
-	{
-	    q = &string2[i];
-	    a = atoi (q);		//°Ñ×Ö·ûŽ®×ª»»³ÉÕûÐÍÊý£¬ŽÓÊý×Ö¿ªÊŒ×ª»»£¬Ö±µœµÚÒ»žö·ÇÊý×Ö×Ö·ûÍ£Ö¹ 
-	    for (; string2[i] >= '0' && string2[i] <= '9'; i++);	//Ìø¹ýÊý×Ö×Ö·û    
-	    p = (struct node *) malloc (sizeof (struct node));
-	    p->num = a;
-	    p->next = top;
-	    top = p;
-	    i--;
-	}
-            else if (string2[i] == '#')	//Óöµœ#Êä³öœá¹û 
-	printf ("result:%d\n", top->num);
-            else
-	{
-	    if (string2[i] == ' ')
-	        continue;		//Ìø¹ý¿Õžñ 
-	    else
+	        switch (a)
 	        {
-	            y = top->num;
-	            p = top;
-	            top = top->next;
-	            free (p);		//ÓöµœÔËËã·ûÈÃÇ°ÁœžöÊý×Ö³öÕ»         
-	            x = top->num;
-	            p = top;
-	            top = top->next;
-	            free (p);
-	            switch (string2[i])
-		{		//œøÐÐŒÓŒõ³Ë³ýÔËËã
-		case '+':
-		    {
-		        a = x + y;
-		        p = (struct node *) malloc (sizeof (struct node));
-		        p->num = a;
-		        p->next = top;
-		        top = p;	//ËãÍêœ«œá¹ûÈëÕ»
-		        break;
-		    }
-		case '-':
-		    {
-		        a = x - y;
-		        p = (struct node *) malloc (sizeof (struct node));
-		        p->num = a;
-		        p->next = top;
-		        top = p;
-		        break;
-		    }
-		case '*':
-		    {
-		        a = x * y;
-		        p = (struct node *) malloc (sizeof (struct node));
-		        p->num = a;
-		        p->next = top;
-		        top = p;
-		        break;
-		    }
-		case '/':
-		    {
-		        a = x / y;
-		        p = (struct node *) malloc (sizeof (struct node));
-		        p->num = a;
-		        p->next = top;
-		        top = p;
-		        break;
-		    }
-		}
-	        }
-	}
+	            case '(': 
+	            {
+                    push(a, 0);
+        		    break;
+	            }
+	            case MULTI:
+	            case DIV:
+	                str_suf[j] = ' ';
+	                j++;
+	                if ((top->data == MULTI) || (top->data == DIV))
+                    {
+                        str_suf[j] = top->data;
+                        j++;
+                        top->data = a;
+                        break;
+                    }
+	            else
+                {
+                    push(a, 0);
+                    break;
+                }
+	        case PLUS:
+	        case MINUS:
+	            {
+                    str_suf[j] = ' ';
+                    j++;
+                    if (top->data == PLUS || top->data == MINUS || top->data == MULTI ||
+                        top->data == DIV)
+                    {
+                        str_suf[j] = top->data;
+                        j++;
+                        top->data = a;
+                        break;
+                    }
+                    else
+                    {
+                        push(a, 0);
+                        break;
+                    }
+	            }
+	        case ')':
+                {
+                    str_suf[j] = ' ';
+                    j++;
+                    while (top->data != '(')
+                    {
+                        str_suf[j] = top->data;
+                        j++;
+                        free(pop());
+                    }
+                    free(pop());
+                    
+                    break;
+                }
+            }
         }
-    return 0;
+    }
+    while (top->data != BOTTOM)
+    {
+        str_suf[j] = top->data;
+        j++;
+        free(pop());
+    }
+    
+#ifdef DEBUG
+    printf("%s\n", str_suf);
+#endif
+    str_suf[j] = TOP;
+
 }
 
-main ()
-{
-    struct node *top;
 
+
+void calculate ()
+{
+    struct node *p;
+    char *q;
+    double x, y, a;
+    int i;
+
+    for (i = 0; i <= j; i++)
+    {
+        if (str_suf[i] >= '0' && str_suf[i] <= '9')
+        {
+            q = &str_suf[i];
+            a = atof (q);
+            for (; str_suf[i] >= '0' && str_suf[i] <= '9' || str_suf[i] == '.' || 
+                tolower(str_suf[i]) == 'e'; i++);
+            push(VOID, a);
+            i--;
+        }
+        else if (str_suf[i] == TOP)
+            printf ("result: %lf\n", top->num);
+        else
+        {
+            if (str_suf[i] == SPACE)
+                continue;
+            else
+            {
+                p = pop();
+                y = p->num;
+	            free (p);
+                p = pop();
+                x = p->num;
+	            free (p);
+	            switch (str_suf[i])
+                {
+                    case PLUS:
+                        {
+                            a = x + y;
+                            push(VOID, a);
+                            break;
+                        }
+                    case MINUS:
+                        {
+                            a = x - y;
+                            push(VOID, a);
+                            break;
+                        }
+                    case MULTI:
+                        {
+                            a = x * y;
+                            push(VOID, a);
+                            break;
+                        }
+                    case DIV:
+                        {
+                            a = x / y;
+                            push(VOID, a);
+                            break;
+                        }
+                }
+            }
+        }
+    }
+}
+
+void clear()
+{ 
+    while(top->data != BOTTOM)
+        free(pop());
+    j = 0;
+}
+int main ()
+{
     top = create ();
-    printf ("Input£º\n");
-    gets (string1);
-    calculate (change (top));
-    getch ();
+    printf ("Input:\n");
+    for(;;)
+    {
+        clear();
+        gets (str_inf);
+        if(str_inf == "Exit")
+            break;
+        change();
+        calculate();
+    }
+
+    return 0;
 }
