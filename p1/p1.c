@@ -12,13 +12,13 @@
 #define MINUS '-'
 #define MULTI '*'
 #define DIV '/'
+#define POW '^'
 #define BOTTOM '$'
 #define TOP '#'
 #define SPACE ' '
 #define VOID 0
 #define SIN -1
-#define POW -2
-#define COS -3
+#define COS -2
 
 #ifndef DEBUG
 #define DEBUG
@@ -62,6 +62,23 @@ pop()
     top = p->next;
     return p;
 }
+
+int pop_data()
+{
+    struct node *p = pop();
+    int t = p->data;
+    free(p);
+    return t;
+}
+
+double pop_num()
+{
+    struct node *p = pop();
+    double t = p->num;
+    free(p);
+    return t;
+}
+
 /* The function to create a reverse Polish notation. */
 struct node *
 change ()
@@ -108,8 +125,8 @@ change ()
                 }
 	        case PLUS:
 	        case MINUS:
-	            {
-                    str_suf[j] = ' ';
+                {
+	                str_suf[j] = ' ';
                     j++;
                     if (top->data == PLUS || top->data == MINUS || top->data == MULTI ||
                         top->data == DIV)
@@ -124,19 +141,49 @@ change ()
                         push(a, 0);
                         break;
                     }
-	            }
-	        case ')':
+               }
+            case POW:
                 {
                     str_suf[j] = ' ';
+                    j++;
+                    if (top->data == PLUS || top->data == MINUS || top->data == MULTI ||
+                        top->data == DIV || top->data == POW)
+                    {
+                        str_suf[j] = top->data;
+                        j++;
+                        top->data = a;
+                        break;
+                    }
+                    else
+                    {
+                        push(a, 0);
+                        break;
+                    }
+                }
+	        case ')':
+                {
+                    str_suf[j] = SPACE;
                     j++;
                     while (top->data != '(')
                     {
                         str_suf[j] = top->data;
                         j++;
-                        free(pop());
+                        pop_num();
                     }
-                    free(pop());
+                    pop_num();
                     
+                    break;
+                }
+            case 's':
+                {
+                    i += 2;
+                    push(SIN, 0);
+                    break;
+                }
+            case 'c':
+                {
+                    i += 2;
+                    push(COS, 0);
                     break;
                 }
             }
@@ -146,7 +193,7 @@ change ()
     {
         str_suf[j] = top->data;
         j++;
-        free(pop());
+        pop_num();
     }
     
 #ifdef DEBUG
@@ -155,8 +202,6 @@ change ()
     str_suf[j] = TOP;
 
 }
-
-
 
 void calculate ()
 {
@@ -184,39 +229,51 @@ void calculate ()
                 continue;
             else
             {
-                p = pop();
-                y = p->num;
-	            free (p);
-                p = pop();
-                x = p->num;
-	            free (p);
+                y = pop_num();
 	            switch (str_suf[i])
                 {
                     case PLUS:
                         {
+                            x = pop_num();
                             a = x + y;
-                            push(VOID, a);
                             break;
                         }
                     case MINUS:
                         {
+                            x = pop_num();
                             a = x - y;
-                            push(VOID, a);
                             break;
                         }
                     case MULTI:
                         {
+                            x = pop_num();
                             a = x * y;
-                            push(VOID, a);
                             break;
                         }
                     case DIV:
                         {
+                            x = pop_num();
                             a = x / y;
-                            push(VOID, a);
                             break;
                         }
+                    case SIN:
+                        {
+                            a = sin(y);
+                            break;
+                        }
+                    case COS:
+                        {
+                            a = cos(y);
+                            break;
+                        }
+                    case POW:
+                        {
+                            x = pop_num();
+                            a = pow(x, y);
+                        }
+
                 }
+                push(VOID, a);
             }
         }
     }
